@@ -802,7 +802,8 @@ def _bytes_to_wav_path(audio_bytes: bytes, mime: str = "audio/wav") -> Path:
 def run_inference(audio_bytes: bytes, mime: str) -> dict:
     """
     调用真实后端。返回:
-      {"text": str, "route": optional, "raw": original_result}
+      {"text": str, "route": optional, "raw": original_result,
+       "infer_time": float, "audio_duration": float, "rtf": float, "rtfx": float}
     抛出异常时由上层捕获并展示。
     """
     model, err = load_megaasr_model()
@@ -811,9 +812,11 @@ def run_inference(audio_bytes: bytes, mime: str) -> dict:
 
     wav_path = _bytes_to_wav_path(audio_bytes, mime)
     try:
+        audio_duration = sf.info(str(wav_path)).duration
+        t0 = time.perf_counter()
         result = model.infer(wav_path, return_route=True)
+        infer_time = time.perf_counter() - t0
     finally:
-        # 用完即删（保留 wav_path 便于 debug 也可以；这里清理掉避免堆积）
         try:
             wav_path.unlink(missing_ok=True)
         except Exception:
@@ -841,7 +844,12 @@ def run_inference(audio_bytes: bytes, mime: str) -> dict:
     else:
         text = str(result)
 
-    return {"text": text, "route": route, "raw": result}
+    rtf = infer_time / audio_duration if audio_duration > 0 else 0.0
+    rtfx = 1.0 / rtf if rtf > 0 else 0.0
+
+    return {"text": text, "route": route, "raw": result,
+            "infer_time": infer_time, "audio_duration": audio_duration,
+            "rtf": rtf, "rtfx": rtfx}
 
 
 # ──────────────────────────────────────────────
@@ -872,6 +880,9 @@ def commit_pending_as_record():
         infer_out = run_inference(p["audio"], p.get("mime", "audio/wav"))
         text = infer_out["text"] or ""
         route = infer_out["route"]
+        rtf = infer_out.get("rtf", 0.0)
+        rtfx = infer_out.get("rtfx", 0.0)
+        infer_time = infer_out.get("infer_time", 0.0)
     except Exception as e:
         st.session_state.last_error = t("infer_error").format(err=str(e))
         # 不落盘记录，pending 保留让用户可以重试
@@ -892,6 +903,9 @@ def commit_pending_as_record():
         "duration": p["duration"],
         "text": text,
         "route": route,
+        "rtf": rtf,
+        "rtfx": rtfx,
+        "infer_time": infer_time,
         "audio": p["audio"],
         "audio_mime": p.get("mime", "audio/wav"),
         "spectrogram": spec,
@@ -1192,6 +1206,14 @@ with col_log:
                     f'<span class="badge gold">{t("router_tag")}: {txt}</span>'
                 )
 
+            # RTF/RTFx 显示
+            rtf_tag = ""
+            if r.get("rtf") and r.get("rtfx"):
+                rtf_tag = (
+                    f'<span class="sep">·</span>'
+                    f'<span class="badge">RTF {r["rtf"]:.3f} · {r["rtfx"]:.1f}x</span>'
+                )
+
             meta = (
                 f'<div class="entry-meta">'
                 f'<span>{r["date"]} {r["time"]}</span>'
@@ -1201,6 +1223,7 @@ with col_log:
                 f'<span>{duration_disp}</span>'
                 f'{src_tag}'
                 f'{route_tag}'
+                f'{rtf_tag}'
                 f"</div>"
             )
 
