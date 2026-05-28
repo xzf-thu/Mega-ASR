@@ -3,6 +3,7 @@ sys.path.append("src")
 
 import argparse
 import os
+import time
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -89,11 +90,15 @@ def main():
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     from MegaASR.model.megaASR import MegaASR
+    import soundfile as sf
 
     audio = resolve_path(args.audio)
     ckpt_dir = resolve_path(args.ckpt_dir)
     vllm_kwargs = build_vllm_kwargs(args)
 
+    audio_duration = sf.info(str(audio)).duration
+
+    t0 = time.perf_counter()
     model = MegaASR(
         model_path=ckpt_dir / "Qwen3-ASR-1.7B",
         lora_dir=ckpt_dir / "mega-asr-merged",
@@ -105,8 +110,18 @@ def main():
         vllm_materialize_lora_device_map=args.vllm_materialize_lora_device_map,
         **vllm_kwargs,
     )
+    t1 = time.perf_counter()
     result = model.infer(audio, return_route=True)
+    t2 = time.perf_counter()
+
+    load_time = t1 - t0
+    infer_time = t2 - t1
+    rtf = infer_time / audio_duration
+    rtfx = 1.0 / rtf
+
     print(result)
+    print(f"[timing] load={load_time:.2f}s  infer={infer_time:.2f}s  total={t2-t0:.2f}s")
+    print(f"[rtf]    audio={audio_duration:.2f}s  RTF={rtf:.4f}  RTFx={rtfx:.2f}x")
 
 
 if __name__ == "__main__":
