@@ -116,7 +116,6 @@ def parse_args() -> argparse.Namespace:
                         help="Path to VAD model (reserved for future use)")
     parser.add_argument("--max-new-tokens", type=int, default=256, dest="max_new_tokens",
                         help="Max new tokens for generation per segment")
-
     args = parser.parse_args()
     if "fsmn" in args.vad:
         args.vad = "fsmn-vad"
