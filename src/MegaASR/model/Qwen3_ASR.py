@@ -35,9 +35,19 @@ class Qwen3ASR:
             )
 
         if device_map is None:
-            device_map = "cuda:0" if torch.cuda.is_available() else "cpu"
+            if torch.cuda.is_available():
+                device_map = "cuda:0"
+            elif torch.backends.mps.is_available():
+                device_map = "mps"
+            else:
+                device_map = "cpu"
         if dtype is None:
-            dtype = torch.bfloat16 if device_map != "cpu" else torch.float32
+            if device_map == "cpu":
+                dtype = torch.float32
+            elif device_map == "mps":
+                dtype = torch.float16
+            else:
+                dtype = torch.bfloat16
 
         self.model = Qwen3ASRModel.from_pretrained(
             self.model_path,

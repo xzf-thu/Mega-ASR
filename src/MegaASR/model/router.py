@@ -30,7 +30,14 @@ class AudioQualityRouter:
         self.checkpoint_path = str(
             Path(checkpoint_path or self.DEFAULT_CHECKPOINT).expanduser()
         )
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        if device is not None:
+            self.device = device
+        elif torch.cuda.is_available():
+            self.device = "cuda"
+        elif torch.backends.mps.is_available():
+            self.device = "mps"
+        else:
+            self.device = "cpu"
         self.threshold = threshold
         self.sample_rate = sample_rate
 
