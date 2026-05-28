@@ -95,6 +95,7 @@ def apply_vad(
     List of {"start": float, "end": float} dicts in seconds.
     """
 
+
     if vad_instance is None:
         vad_instance = init_vad(vad_type)
 
