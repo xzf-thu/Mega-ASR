@@ -3,6 +3,7 @@ sys.path.append("src")
 
 import argparse
 import os
+import time
 from pathlib import Path
 
 import numpy as np
@@ -86,6 +87,7 @@ def main():
     )
 
     wav16k = read_audio_16k(audio)
+    audio_duration = wav16k.shape[0] / 16000.0
     step = int(round(args.step_ms / 1000.0 * 16000))
     if step <= 0:
         raise ValueError("--step_ms must be positive.")
@@ -98,15 +100,29 @@ def main():
 
     pos = 0
     call_id = 0
+    total_infer_time = 0.0
     while pos < wav16k.shape[0]:
         seg = wav16k[pos:pos + step]
         pos += seg.shape[0]
         call_id += 1
+        chunk_duration = seg.shape[0] / 16000.0
+        t0 = time.perf_counter()
         model.streaming_transcribe(seg, state)
-        print(f"[call {call_id:03d}] language={state.language!r} text={state.text!r}")
+        chunk_infer = time.perf_counter() - t0
+        total_infer_time += chunk_infer
+        chunk_rtf = chunk_infer / chunk_duration if chunk_duration > 0 else 0.0
+        print(f"[call {call_id:03d}] language={state.language!r} text={state.text!r}"
+              f"  chunk_RTF={chunk_rtf:.3f}")
 
+    t0 = time.perf_counter()
     model.finish_streaming_transcribe(state)
+    total_infer_time += time.perf_counter() - t0
+
+    rtf = total_infer_time / audio_duration if audio_duration > 0 else 0.0
+    rtfx = 1.0 / rtf if rtf > 0 else 0.0
     print(f"[final] language={state.language!r} text={state.text!r}")
+    print(f"[rtf]   audio={audio_duration:.2f}s  infer={total_infer_time:.2f}s"
+          f"  RTF={rtf:.4f}  RTFx={rtfx:.2f}x")
 
 
 if __name__ == "__main__":
