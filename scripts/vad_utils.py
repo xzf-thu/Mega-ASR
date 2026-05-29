@@ -96,6 +96,7 @@ def apply_vad(
     """
 
 
+
     if vad_instance is None:
         vad_instance = init_vad(vad_type)
 
