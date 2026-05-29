@@ -73,24 +73,28 @@ def apply_vad(
     silence_gap_s: float = 0.5,
     silence_thresh: float = 0.01,
     min_speech_s: float = 0.2,
+    min_silence_duration_ms: int = 500,
 ) -> List[Dict[str, float]]:
     """
     Detect speech segments in an audio file.
 
     Parameters
     ----------
-    audio_path    : path to a mono WAV file (any sample rate)
-    vad_type      : 'simple-vad' | 'silero-vad' | 'ten-vad' | 'fsmn-vad'
-    vad_instance  : pre-initialized VAD object from init_vad(); if None, initializes on the fly
-    silence_gap_s : (simple/ten-vad) min silence gap (s) to split segments
-    silence_thresh: (simple) RMS energy threshold for silence
-    min_speech_s  : minimum speech segment duration (s) to keep
+    audio_path            : path to a mono WAV file (any sample rate)
+    vad_type              : 'simple-vad' | 'silero-vad' | 'ten-vad' | 'fsmn-vad'
+    vad_instance          : pre-initialized VAD object from init_vad(); if None, initializes on the fly
+    silence_gap_s         : (simple/ten-vad) min silence gap (s) to split segments
+    silence_thresh        : (simple) RMS energy threshold for silence
+    min_speech_s          : minimum speech segment duration (s) to keep
+    min_silence_duration_ms : (silero-vad only) min silence duration (ms) between two speech segments
+                            before splitting them. Default 500ms. The silero-vad built-in default
+                            is 100ms which causes over-segmentation in conversational audio.
 
     Returns
     -------
     List of {"start": float, "end": float} dicts in seconds.
     """
-    
+
     if vad_instance is None:
         vad_instance = init_vad(vad_type)
 
@@ -101,7 +105,8 @@ def apply_vad(
         return _energy_vad(audio, sample_rate, silence_gap_s, silence_thresh, min_speech_s)
     elif vad_type == "silero-vad":
         model, get_speech_timestamps = vad_instance
-        return _silero_vad(audio, sample_rate, min_speech_s, model, get_speech_timestamps)
+        return _silero_vad(audio, sample_rate, min_speech_s, model, get_speech_timestamps,
+                           min_silence_duration_ms=min_silence_duration_ms)
     elif vad_type == "ten-vad":
         TenVad = vad_instance
         return _ten_vad(audio, sample_rate, min_speech_s, TenVad, silence_gap_s)
@@ -177,6 +182,7 @@ def _silero_vad(
     min_speech_s: float,
     model,
     get_speech_timestamps,
+    min_silence_duration_ms: int = 500,
 ) -> List[Dict[str, float]]:
     """Silero VAD. Resamples to 16kHz if needed. Uses pre-loaded model."""
     import torch
@@ -199,6 +205,7 @@ def _silero_vad(
         model,
         sampling_rate=target_sr,
         min_speech_duration_ms=int(min_speech_s * 1000),
+        min_silence_duration_ms=min_silence_duration_ms,
         return_seconds=True,
     )
 

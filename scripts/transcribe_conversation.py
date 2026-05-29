@@ -9,7 +9,7 @@ Transcribes a stereo audio file by processing each channel independently:
 Usage:
   python scripts/transcribe_conversation.py -i <audio_file> [OPTIONS]
 
-  --model-path/-mp        ASR model path (default: ./checkpoints/Qwen3-ASR-0.6B)
+  --model-path/-mp        ASR model path (default: ./ckpt/Mega-ASR/Qwen3-ASR-0.6B)
   --lora-dir/-ld          LoRA adapter directory (optional, e.g. ckpt/Mega-ASR/mega-asr-merged)
   --keep-delta-on-gpu     Keep LoRA deltas on GPU (default: True; set False to save GPU memory)
   --input/-i              Stereo audio file path (required)
@@ -91,7 +91,7 @@ def parse_args() -> argparse.Namespace:
         description="Qwen3-ASR two-channel conversation transcription tool",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--model-path", "-mp", default="./checkpoints/Qwen3-ASR-0.6B", help="ASR model path")
+    parser.add_argument("--model-path", "-mp", default="./ckpt/Mega-ASR/Qwen3-ASR-1.7B", help="ASR model path")
     parser.add_argument("--lora-dir", "-ld", default=None, dest="lora_dir",
                         help="LoRA adapter directory (e.g. ckpt/Mega-ASR/mega-asr-merged); omit to use base model only")
     parser.add_argument("--keep-delta-on-gpu", type=lambda x: x.lower() in ("1", "true", "yes", "y"),
