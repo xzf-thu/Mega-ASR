@@ -52,7 +52,7 @@ Output format (per file):
     "vad_model": "silero-vad",
     "aligner_model": "no_aligner",
     "conversations": [
-      {"role": "channel_0", "text": "...", "start": 0.0, "end": 1.2},
+      {"speaker": "channel_0", "text": "...", "start": 0.0, "end": 1.2},
       ...
     ]
   }
@@ -262,13 +262,13 @@ def transcribe_one(
 
                 if text:
                     all_utterances.append({
-                        "role":  f"channel_{ch}",
+                        "speaker": f"channel_{ch}",
                         "text":  text,
                         "start": seg["start"],
                         "end":   seg["end"],
                     })
 
-    all_utterances.sort(key=lambda u: (u["start"], u["role"]))
+    all_utterances.sort(key=lambda u: (u["start"], u["speaker"]))
 
     transcribe_s = time.perf_counter() - t_transcribe
     rtf = transcribe_s / total_dur_s if total_dur_s > 0 else None
@@ -303,7 +303,7 @@ def transcribe_one(
 
     logger.info("[result] %d utterance(s) in conversation", len(all_utterances))
     for u in all_utterances[:8]:
-        logger.info("  [%.2f-%.2f] %s: %r", u["start"], u["end"], u["role"], u["text"])
+        logger.info("  [%.2f-%.2f] %s: %r", u["start"], u["end"], u["speaker"], u["text"])
     if len(all_utterances) > 8:
         logger.info("  ... (%d more)", len(all_utterances) - 8)
     logger.info("[output] saved: %s", output_path)
