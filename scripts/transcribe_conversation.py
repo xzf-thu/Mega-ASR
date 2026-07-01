@@ -128,8 +128,8 @@ def parse_args() -> argparse.Namespace:
                         help="RMS energy threshold below which a frame is considered silent")
     parser.add_argument("--min-speech", "-ms", type=float, default=0.2, dest="min_speech",
                         help="Min speech segment duration (s); shorter segments are discarded")
-    parser.add_argument("--channels", "-c", type=int, default=2,
-                        help="Number of channels to process")
+    parser.add_argument("--channels", "-c", type=int, default=-1,
+                        help="Channels to process: 0=ch0 only, 1=ch1 only, -1 or >=num_channels=all (default: -1)")
     parser.add_argument("--vad", default="simple",
                         choices=["simple", "simple-vad", "silero", "silero-vad", "ten", "ten-vad", "fsmn", "fsmn-vad"],
                         help="VAD backend")
@@ -176,6 +176,13 @@ def collect_input_files(args) -> list:
     return files
 
 
+def resolve_channels(channels_arg: int, num_channels: int) -> list:
+    """-1 or value >= num_channels → all channels; otherwise [channels_arg]."""
+    if channels_arg < 0 or channels_arg >= num_channels:
+        return list(range(num_channels))
+    return [channels_arg]
+
+
 def get_output_path(audio_path: str, model_name: str, vad_name: str, output_arg, batch_mode: bool) -> str:
     basename = os.path.splitext(os.path.basename(audio_path))[0]
     default_name = f"{basename}.conversation.{model_name}.{vad_name}.no-aligner.json"
@@ -199,19 +206,19 @@ def transcribe_one(
     audio_data, sample_rate = sf.read(audio_path, always_2d=True)
     total_dur_s = audio_data.shape[0] / sample_rate
     num_channels = audio_data.shape[1]
-    channels_to_process = min(args.channels, num_channels)
-    if num_channels < args.channels:
-        logger.warning("[warning] audio has %d channel(s), processing %d", num_channels, channels_to_process)
+    channels_to_process = resolve_channels(args.channels, num_channels)
+    logger.info("[input]  %s  (%d ch, %.1fs)  processing ch%s",
+                audio_path, num_channels, total_dur_s,
+                "+".join(str(c) for c in channels_to_process))
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    logger.info("[input]  %s  (%d ch, %.1fs)", audio_path, num_channels, total_dur_s)
 
     all_utterances = []
     total_vad_s = 0.0
     t_transcribe = time.perf_counter()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        for ch in range(channels_to_process):
+        for ch in channels_to_process:
             channel_audio = audio_data[:, ch]
 
             tmp_ch_wav = os.path.join(tmpdir, f"ch{ch}_full.wav")
@@ -318,7 +325,7 @@ def main() -> None:
     logger.info("[config] device=%s  dtype=%s  vad=%s", args.device, args.dtype, args.vad)
     if args.vad == "simple-vad":
         logger.info("[config] silence_gap=%.2fs  silence_thresh=%.4f", args.silence_gap, args.silence_thresh)
-    logger.info("[config] min_speech=%.2fs  channels=%d", args.min_speech, args.channels)
+    logger.info("[config] min_speech=%.2fs  channels=%s", args.min_speech, args.channels)
     if batch_mode:
         logger.info("[batch] %d file(s) to process", len(input_files))
 
