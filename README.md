@@ -489,10 +489,10 @@ This project will be released under the **Apache-2.0 License**. You can do every
       url={https://arxiv.org/abs/2605.19833},
 }
 ```
-<a href="https://www.star-history.com/?repos=gpt-omni%2Fmini-omi%2Cxzf-thu%2FMega-ASR&type=date&legend=bottom-right">
+<a href="https://star-history.dera.page/#gpt-omni/mini-omi,xzf-thu/Mega-ASR&type=date&legend=bottom-right">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=gpt-omni/mini-omi%2Cxzf-thu/Mega-ASR&type=date&theme=dark&legend=bottom-right" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=gpt-omni/mini-omi%2Cxzf-thu/Mega-ASR&type=date&legend=bottom-right" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=gpt-omni/mini-omi%2Cxzf-thu/Mega-ASR&type=date&legend=bottom-right" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=gpt-omni/mini-omi%2Cxzf-thu/Mega-ASR&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=gpt-omni/mini-omi%2Cxzf-thu/Mega-ASR&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=gpt-omni/mini-omi%2Cxzf-thu/Mega-ASR&type=date&legend=bottom-right" />
  </picture>
 </a>
