@@ -1,0 +1,53 @@
+# Reconstructed ASR recipe for hybridftp_epoch6_full_dataset_with_gigaspeech_early.
+# Reference checkpoint: checkpoint-3354.
+# Set ASR_MODEL_PATH and ASR_RUN_DIR before loading this file.
+# Use absolute paths. Existing MODEL_PATH/TRAIN_JSONL/VAL_JSONL/RUN_DIR
+# environment variables take precedence over these entries.
+model_path: "${ASR_MODEL_PATH}"
+train_jsonl: "/gscratch/intelligentsystems/jason/combined_train_wer_labeled.jsonl"
+val_jsonl: "/gscratch/intelligentsystems/jason/combined_val_wer_labeled.jsonl"
+run_dir: "${ASR_RUN_DIR}"
+run_name: asr_hybrid_early_6ep
+
+# Confirmed by the production run configuration.
+fusion_mode: early
+collator: mix
+language: English
+
+# Six epochs and training batch size 8 are recorded in trainer_state.json.
+epochs: 6
+batch_size: 8
+# User-proposed reconstruction; the original accumulation was not recovered.
+grad_acc: 8
+# Reuse default: two GPU workers. The historical GPU count is unconfirmed.
+# Effective batch: 8 * 8 * 2 = 128. Override for the allocated GPU count.
+nproc_per_node: 2
+
+# Confirmed by run_config.json and adapter_config.json.
+lr: 1.0e-5
+lora_dropout: 0.05
+lora_bias: "none"
+ft_params:
+  encoder:
+    ft_mode: full
+    lr: 1.0e-5
+  fusion:
+    ft_mode: full
+    lr: 1.0e-5
+  aligner:
+    ft_mode: full
+    lr: 1.0e-5
+  llm:
+    ft_mode: lora
+    lr: 1.0e-5
+    lora_r: 8
+    lora_alpha: 16
+
+# Explicit reuse defaults, not verified historical settings.
+# The launcher uses the Python entry point's linear scheduler default.
+warmup_ratio: 0.05
+weight_decay: 0.01
+max_grad_norm: 1.0
+save_steps: 200
+save_total_limit: 5
+report_to: "none"
